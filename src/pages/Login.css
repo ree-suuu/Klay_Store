@@ -1,0 +1,550 @@
+/* ==================== CREXTIO-INSPIRED ARTISANAL LOGIN & SIGNUP ==================== */
+.crextio-page-wrapper {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem 3.5rem;
+  background: radial-gradient(circle at 10% 20%, rgba(243, 237, 228, 0.8) 0%, transparent 45%),
+              radial-gradient(circle at 90% 80%, rgba(247, 230, 222, 0.6) 0%, transparent 45%),
+              var(--bg-primary);
+}
+
+/* Master Card Container */
+.crextio-card-container {
+  width: 100%;
+  max-width: 1080px;
+  background-color: #ffffff;
+  border: 1px solid rgba(232, 226, 216, 0.8);
+  border-radius: 36px;
+  box-shadow: 0 24px 60px rgba(45, 40, 37, 0.08), 0 4px 16px rgba(45, 40, 37, 0.03);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  transition: all 0.35s ease;
+}
+
+/* Dynamic Direction per user requirement:
+   - If user is CREATING AN ACCOUNT (register): Form on LEFT, Picture on RIGHT
+   - If user is LOGGING IN (signin): Picture on LEFT, Form on RIGHT
+*/
+.crextio-card-container.register-mode {
+  grid-template-areas: "form picture";
+}
+
+.crextio-card-container.signin-mode {
+  grid-template-areas: "picture form";
+}
+
+.crextio-form-column {
+  grid-area: form;
+  padding: 3.25rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  animation: fadeInForm 0.3s ease-out;
+}
+
+.crextio-picture-column {
+  grid-area: picture;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInPicture 0.3s ease-out;
+}
+
+@keyframes fadeInForm {
+  from {
+    opacity: 0.6;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInPicture {
+  from {
+    opacity: 0.6;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.crextio-form-inner {
+  width: 100%;
+  max-width: 410px;
+  margin: 0 auto;
+}
+
+/* ==================== FORM TOP BAR & PILLS ==================== */
+.crextio-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 2rem;
+}
+
+.crextio-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-light);
+  background-color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(45, 40, 37, 0.04);
+}
+
+.pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-terracotta);
+}
+
+.crextio-mode-pill-toggle {
+  display: flex;
+  background-color: #f2eee8;
+  padding: 3px;
+  border-radius: 9999px;
+  border: 1px solid #e5ded4;
+}
+
+.mode-toggle-chip {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: none;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.mode-toggle-chip.active {
+  background-color: #ffffff;
+  color: var(--text-main);
+  box-shadow: 0 2px 6px rgba(45, 40, 37, 0.08);
+}
+
+/* ==================== FORM HEADINGS ==================== */
+.crextio-header-text {
+  margin-bottom: 1.8rem;
+}
+
+.crextio-title {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  line-height: 1.2;
+  color: var(--text-main);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.4rem;
+}
+
+.crextio-subtitle {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ==================== ALERT BOX ==================== */
+.crextio-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.84rem;
+  margin-bottom: 1.4rem;
+}
+
+.crextio-alert.error {
+  background-color: #fdf2f0;
+  border: 1px solid #f2cfc7;
+  color: #ad3e28;
+}
+
+.crextio-alert.success {
+  background-color: #edf5ef;
+  border: 1px solid #cce3d1;
+  color: #3b6b44;
+}
+
+/* ==================== FORM & PILL INPUTS ==================== */
+.crextio-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.crextio-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.crextio-field label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #6a625b;
+  padding-left: 0.4rem;
+}
+
+.crextio-pill-input {
+  width: 100%;
+  border-radius: 9999px;
+  background-color: #f7f5f1;
+  border: 1px solid #eae3d8;
+  padding: 0.85rem 1.35rem;
+  font-size: 0.92rem;
+  color: var(--text-main);
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.crextio-pill-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: var(--accent-terracotta);
+  box-shadow: 0 0 0 3px rgba(200, 109, 81, 0.12);
+}
+
+.password-pill-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-pill-wrapper .crextio-pill-input {
+  padding-right: 3rem;
+}
+
+.crextio-eye-btn {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #8c8278;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.crextio-eye-btn:hover {
+  color: var(--text-main);
+}
+
+/* Submit Button */
+.crextio-submit-btn {
+  width: 100%;
+  border-radius: 9999px;
+  padding: 0.92rem 1.5rem;
+  background-color: var(--accent-terracotta);
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(200, 109, 81, 0.28);
+  transition: all 0.2s ease;
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.crextio-submit-btn:hover:not(:disabled) {
+  background-color: var(--accent-terracotta-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(200, 109, 81, 0.35);
+}
+
+.crextio-submit-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Footer Link */
+.crextio-footer-switch {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.crextio-switch-link {
+  background: none;
+  border: none;
+  color: var(--accent-terracotta);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.2rem;
+}
+
+.crextio-switch-link:hover {
+  text-decoration: underline;
+  color: var(--accent-terracotta-hover);
+}
+
+/* ==================== PICTURE COLUMN (Clean & Properly Fitted) ==================== */
+.picture-inner-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  border-radius: 28px;
+  overflow: hidden;
+  background-color: #faf7f2;
+  border: 1px solid rgba(232, 226, 216, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.slay-klay-hero-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 16px;
+  transition: transform 0.3s ease;
+}
+
+.picture-inner-wrapper:hover .slay-klay-hero-img {
+  transform: scale(1.02);
+}
+
+/* ==================== CELEBRATION VIEW ==================== */
+.crextio-celebration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 0;
+  animation: fadeInCelebration 0.3s ease-out;
+}
+
+@keyframes fadeInCelebration {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.celebration-avatar-wrapper {
+  position: relative;
+  margin-bottom: 1.25rem;
+}
+
+.celebration-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c86d51 0%, #a85237 100%);
+  color: #ffffff;
+  font-size: 2.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(200, 109, 81, 0.35);
+  user-select: none;
+}
+
+.celebration-check-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #40884e;
+  border: 3px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.celebration-redirect-box {
+  width: 100%;
+  max-width: 320px;
+  margin: 1.5rem 0 1.8rem;
+}
+
+.redirect-pulse-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #f2eee8;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.redirect-progress-fill {
+  width: 100%;
+  height: 100%;
+  background-color: var(--accent-terracotta);
+  animation: progressFill 1.5s linear forwards;
+  transform-origin: left;
+}
+
+@keyframes progressFill {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+.redirect-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.celebration-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+.btn-auth-subtle {
+  display: inline-block;
+  padding: 0.65rem;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.btn-auth-subtle:hover {
+  color: var(--text-main);
+}
+
+/* ==================== ALREADY LOGGED IN VIEW ==================== */
+.already-logged-card {
+  width: 100%;
+  max-width: 480px;
+  background-color: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 32px;
+  padding: 3rem 2.25rem;
+  box-shadow: 0 16px 40px rgba(45, 40, 37, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.already-avatar-badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c86d51 0%, #a85237 100%);
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 14px rgba(200, 109, 81, 0.3);
+}
+
+.already-logged-card h2 {
+  font-family: var(--font-heading);
+  font-size: 1.85rem;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.already-email-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent-terracotta);
+  margin-bottom: 0.9rem;
+}
+
+.already-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1.8rem;
+}
+
+.already-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.btn-auth-outline {
+  width: 100%;
+  padding: 0.85rem;
+  background: none;
+  border: 1px solid var(--border-light);
+  border-radius: 9999px;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-auth-outline:hover {
+  border-color: #b33927;
+  color: #b33927;
+  background-color: #fdedeb;
+}
+
+/* ==================== RESPONSIVE VIEW ==================== */
+@media (max-width: 960px) {
+  .crextio-card-container {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    border-radius: 28px;
+  }
+
+  .crextio-card-container.register-mode,
+  .crextio-card-container.signin-mode {
+    grid-template-areas: 
+      "form"
+      "picture";
+  }
+
+  .crextio-form-column {
+    padding: 2.2rem 1.8rem;
+  }
+
+  .crextio-picture-column {
+    padding: 0 1.5rem 1.5rem;
+  }
+
+  .picture-inner-wrapper {
+    min-height: 300px;
+  }
+}

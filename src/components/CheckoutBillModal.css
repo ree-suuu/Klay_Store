@@ -1,0 +1,688 @@
+/* ==================== CHECKOUT BILL & INVOICE MODAL ==================== */
+.checkout-bill-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(45, 40, 37, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeInBill 0.2s ease-out;
+}
+
+@keyframes fadeInBill {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.checkout-bill-card {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  max-height: 92vh;
+  background-color: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 28px;
+  box-shadow: 0 20px 50px rgba(45, 40, 37, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: popInBill 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popInBill {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.bill-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+
+.bill-close-btn:hover {
+  background-color: #f2eee8;
+  color: var(--text-main);
+}
+
+.bill-content-scroll {
+  padding: 2.2rem 2.2rem 2rem;
+  overflow-y: auto;
+}
+
+/* Header */
+.bill-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.bill-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.bill-logo-img {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 0.3rem;
+}
+
+.bill-tagline {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.bill-meta-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.invoice-badge {
+  background-color: #f4eae4;
+  color: #7b4331;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  margin-bottom: 0.3rem;
+}
+
+.bill-invoice-num {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.bill-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.bill-divider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin-bottom: 1.25rem;
+}
+
+/* Customer & Shipping Section */
+.checkout-customer-section {
+  background-color: #faf8f5;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.4rem;
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+}
+
+.customer-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-field label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-field input {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-main);
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: var(--accent-terracotta);
+}
+
+/* Table */
+.bill-table-wrapper {
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.bill-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.bill-table th {
+  background-color: #f7f3ec;
+  padding: 0.65rem 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.bill-table th.th-price,
+.bill-table th.th-total {
+  text-align: right;
+}
+
+.bill-table th.th-qty {
+  text-align: center;
+}
+
+.bill-table td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+}
+
+.bill-table tr:last-child td {
+  border-bottom: none;
+}
+
+.bill-item-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bill-item-thumb {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  background-color: #faf8f5;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.bill-item-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bill-item-brand {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-terracotta);
+}
+
+.bill-item-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.td-price,
+.td-total {
+  text-align: right;
+  font-weight: 600;
+}
+
+.td-qty {
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Calculation Box */
+.bill-calculation-box {
+  background-color: #faf8f5;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1.2rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.free-tag {
+  color: #3b6b44;
+  font-weight: 700;
+}
+
+.calc-divider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin: 0.3rem 0;
+}
+
+.grand-total-row {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  align-items: center;
+}
+
+.grand-total-amount {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--accent-terracotta);
+}
+
+/* Payment Selector */
+.bill-payment-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.4rem;
+}
+
+.payment-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.payment-pill-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.payment-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--border-light);
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background-color: #ffffff;
+}
+
+.payment-pill.active {
+  border-color: var(--accent-terracotta);
+  color: var(--accent-terracotta);
+  background-color: #fcf5f1;
+}
+
+.payment-pill.active.esewa {
+  border-color: #41a124;
+  color: #2b7714;
+  background-color: #eff9ee;
+}
+
+.pill-dot.esewa-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #41a124;
+}
+
+/* ==================== ESEWA DYNAMIC QR SECTION ==================== */
+.esewa-qr-container {
+  background-color: #f7fbf6;
+  border: 1.5px solid #c2e5b8;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(65, 161, 36, 0.08);
+  margin-bottom: 1rem;
+}
+
+.esewa-qr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-bottom: 1px solid #d4edcc;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.esewa-logo-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #41a124;
+  color: #ffffff;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+}
+
+.esewa-icon {
+  width: 18px;
+  height: 18px;
+  background-color: #ffffff;
+  color: #41a124;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.esewa-bill-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.esewa-scan-instruction {
+  font-size: 0.76rem;
+  color: #4b6643;
+  font-weight: 600;
+}
+
+.esewa-payable-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2b7714;
+}
+
+/* The QR Box */
+.esewa-qr-box {
+  background-color: #ffffff;
+  border: 2px solid #bde2b2;
+  border-radius: 18px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(45, 40, 37, 0.08);
+  margin-bottom: 1.25rem;
+}
+
+.qr-svg-wrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.esewa-qr-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.qr-center-emblem {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  background-color: #41a124;
+  border: 3px solid #ffffff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 900;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.qr-caption {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+}
+
+/* Pay with eSewa Button */
+.esewa-pay-btn {
+  width: 100%;
+  max-width: 360px;
+  padding: 0.88rem 1.5rem;
+  background-color: #41a124;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(65, 161, 36, 0.3);
+  transition: all 0.2s ease;
+  margin-bottom: 0.75rem;
+}
+
+.esewa-pay-btn:hover:not(:disabled) {
+  background-color: #388d1f;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(65, 161, 36, 0.38);
+}
+
+.btn-esewa-icon {
+  width: 22px;
+  height: 22px;
+  background-color: #ffffff;
+  color: #41a124;
+  border-radius: 50%;
+  font-weight: 900;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Done & Proceed Fallback */
+.esewa-fallback-row {
+  width: 100%;
+  max-width: 360px;
+}
+
+.esewa-done-proceed-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #ffffff;
+  border: 1.5px solid #41a124;
+  color: #2b7714;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition: all 0.15s ease;
+}
+
+.esewa-done-proceed-btn:hover:not(:disabled) {
+  background-color: #eff9ee;
+}
+
+/* COD Actions */
+.bill-actions-row {
+  display: flex;
+  gap: 0.85rem;
+}
+
+.bill-primary-btn {
+  flex-grow: 1;
+  padding: 0.85rem 1.25rem;
+  background-color: var(--accent-terracotta);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(200, 109, 81, 0.28);
+  transition: all 0.2s ease;
+}
+
+.bill-primary-btn:hover:not(:disabled) {
+  background-color: var(--accent-terracotta-hover);
+  transform: translateY(-1px);
+}
+
+.bill-secondary-btn {
+  padding: 0.85rem 1.2rem;
+  background-color: #f2eee8;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+}
+
+.bill-secondary-btn:hover {
+  background-color: #eae3d9;
+}
+
+.text-terracotta {
+  color: var(--accent-terracotta);
+}
+
+/* Order Confirmed View */
+.order-confirmed-view {
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.order-success-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #40884e 0%, #2f693b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 6px 18px rgba(64, 136, 78, 0.35);
+}
+
+.order-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #40884e;
+  margin-bottom: 0.35rem;
+}
+
+.order-confirmed-view h2 {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.order-subtext {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  max-width: 420px;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.order-meta-box {
+  width: 100%;
+  max-width: 380px;
+  background-color: #faf8f5;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  text-align: left;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  gap: 1rem;
+}
+
+.meta-row span:first-child {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.bill-error-banner {
+  background-color: #fdf2f0;
+  border: 1px solid #f2cfc7;
+  color: #ad3e28;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .customer-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .bill-content-scroll {
+    padding: 1.5rem 1.2rem;
+  }
+}

@@ -1,0 +1,360 @@
+/* About Us Page - Cinematic & Dramatic Storytelling Styles */
+.about-hero-section {
+  text-align: center;
+  max-width: 860px;
+  margin: 0 auto 3.5rem auto;
+  padding: 1rem 0;
+}
+
+.about-dramatic-title {
+  font-family: var(--font-heading);
+  font-size: 3.2rem;
+  line-height: 1.18;
+  color: var(--text-main);
+  margin-bottom: 1.4rem;
+  letter-spacing: -0.02em;
+}
+
+.about-dramatic-title span {
+  color: var(--accent-terracotta);
+  font-style: italic;
+}
+
+.about-hero-lead {
+  font-size: 1.25rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* Featured Story Banner with Realistic Image */
+.about-story-banner {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 4.5rem;
+  box-shadow: 0 16px 40px rgba(45, 40, 37, 0.12);
+  border: 1px solid var(--border-light);
+  background-color: var(--text-main);
+}
+
+.story-banner-image {
+  width: 100%;
+  height: 480px;
+  object-fit: cover;
+  display: block;
+  opacity: 0.9;
+  filter: brightness(0.92) contrast(1.04);
+}
+
+.story-banner-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 3rem;
+  background: linear-gradient(to top, rgba(25, 22, 20, 0.92) 0%, rgba(25, 22, 20, 0.6) 60%, transparent 100%);
+  color: #ffffff;
+}
+
+.story-banner-tagline {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #E29578;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.story-banner-quote {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  line-height: 1.35;
+  color: #FAF8F5;
+  max-width: 780px;
+  margin: 0;
+}
+
+/* Two-column Narrative Story Blocks */
+.story-chapter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+  margin-bottom: 5rem;
+}
+
+.story-chapter.reversed {
+  direction: rtl;
+}
+
+.story-chapter.reversed .chapter-content {
+  direction: ltr;
+}
+
+.story-chapter.reversed .chapter-media {
+  direction: ltr;
+}
+
+.chapter-media {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(45, 40, 37, 0.09);
+  border: 1px solid var(--border-light);
+}
+
+.chapter-image {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.chapter-media:hover .chapter-image {
+  transform: scale(1.03);
+}
+
+.chapter-badge-caption {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background-color: rgba(45, 40, 37, 0.85);
+  backdrop-filter: blur(8px);
+  color: #FAF8F5;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.chapter-content {
+  padding: 1rem 0;
+}
+
+.chapter-number {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--accent-terracotta);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.chapter-title {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  line-height: 1.25;
+  color: var(--text-main);
+  margin-bottom: 1.2rem;
+}
+
+.chapter-text {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+  margin-bottom: 1.2rem;
+}
+
+.chapter-text strong {
+  color: var(--text-main);
+}
+
+/* 1-Stop Sanctuary Feature Section */
+.sanctuary-section {
+  background-color: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 3.5rem 3rem;
+  margin-bottom: 5rem;
+  box-shadow: 0 10px 30px rgba(45, 40, 37, 0.05);
+}
+
+.sanctuary-header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 3rem auto;
+}
+
+.sanctuary-header h2 {
+  font-family: var(--font-heading);
+  font-size: 2.4rem;
+  color: var(--text-main);
+  margin-bottom: 0.8rem;
+}
+
+.sanctuary-header p {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.sanctuary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.8rem;
+  margin-bottom: 2.5rem;
+}
+
+.sanctuary-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 1.8rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sanctuary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(45, 40, 37, 0.08);
+  border-color: var(--accent-terracotta);
+}
+
+.sanctuary-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background-color: rgba(200, 109, 81, 0.12);
+  color: var(--accent-terracotta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+}
+
+.sanctuary-card h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--text-main);
+  margin-bottom: 0.6rem;
+}
+
+.sanctuary-card p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Stat Pillars */
+.about-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+.stat-item .stat-num {
+  font-family: var(--font-heading);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--accent-terracotta);
+  line-height: 1;
+  margin-bottom: 0.4rem;
+}
+
+.stat-item .stat-label {
+  font-size: 0.88rem;
+  color: var(--text-main);
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.stat-item .stat-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Call to Action Footer in About */
+.about-cta-box {
+  background: linear-gradient(135deg, #2D2825 0%, #1E1B19 100%);
+  color: #FAF8F5;
+  border-radius: var(--radius-lg);
+  padding: 3.5rem 2.5rem;
+  text-align: center;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15);
+}
+
+.about-cta-box h2 {
+  font-family: var(--font-heading);
+  font-size: 2.3rem;
+  color: #ffffff;
+  margin-bottom: 0.9rem;
+}
+
+.about-cta-box p {
+  font-size: 1.05rem;
+  color: #D3CDC6;
+  max-width: 600px;
+  margin: 0 auto 2rem auto;
+  line-height: 1.6;
+}
+
+.about-cta-btn {
+  display: inline-block;
+  background-color: var(--accent-terracotta);
+  color: #ffffff;
+  padding: 0.85rem 2.2rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(200, 109, 81, 0.35);
+}
+
+.about-cta-btn:hover {
+  background-color: var(--accent-terracotta-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(200, 109, 81, 0.45);
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .about-dramatic-title {
+    font-size: 2.4rem;
+  }
+  .story-chapter {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .story-chapter.reversed {
+    direction: ltr;
+  }
+  .story-banner-image {
+    height: 360px;
+  }
+  .story-banner-overlay {
+    padding: 1.8rem;
+  }
+  .story-banner-quote {
+    font-size: 1.3rem;
+  }
+  .about-stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+  .sanctuary-section {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .about-dramatic-title {
+    font-size: 2rem;
+  }
+  .about-stats-strip {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .chapter-image {
+    height: 280px;
+  }
+  .story-banner-image {
+    height: 280px;
+  }
+}

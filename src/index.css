@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  /* Subtle, warm & elegant color palette for an artisan utensil store */
+  --bg-primary: #FAF8F5;       /* Warm oat/linen background (not too bright white) */
+  --bg-card: #FFFFFF;          /* Pure clean card background */
+  --bg-subtle: #F3EEE7;        /* Soft sand container fill */
+  --text-main: #2D2825;        /* Deep warm charcoal (soft on eyes, not harsh black) */
+  --text-muted: #736B63;       /* Calming muted earthy gray */
+  --accent-terracotta: #C86D51;/* Warm terracotta / copper tone (utensil feel) */
+  --accent-terracotta-hover: #B25A3F;
+  --accent-sage: #5F7464;      /* Soothing sage herb green */
+  --accent-sage-light: #EBF0EC;
+  --border-light: #E8E2D8;     /* Soft warm border */
+  --border-focus: #C86D51;
+  --shadow-sm: 0 1px 4px rgba(45, 40, 37, 0.05);
+  --shadow-md: 0 4px 12px rgba(45, 40, 37, 0.08);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Typography */
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Playfair Display', Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}

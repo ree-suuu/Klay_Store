@@ -1,0 +1,112 @@
+/* ==================== ON-SCREEN TOAST NOTIFICATIONS ==================== */
+.klay-toast-banner {
+  position: fixed;
+  top: 86px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background-color: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.15rem;
+  box-shadow: 0 12px 32px rgba(45, 40, 37, 0.16);
+  max-width: 400px;
+  animation: slideInToast 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInToast {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.klay-toast-banner.cart .toast-icon-wrap {
+  background-color: rgba(200, 109, 81, 0.14);
+  color: var(--accent-terracotta);
+}
+
+.klay-toast-banner.success .toast-icon-wrap {
+  background-color: rgba(95, 116, 100, 0.14);
+  color: #456b4b;
+}
+
+.klay-toast-banner.info .toast-icon-wrap {
+  background-color: #f2eee8;
+  color: var(--text-main);
+}
+
+.toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex-grow: 1;
+}
+
+.toast-message {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.toast-action-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-terracotta);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+
+.toast-action-btn:hover {
+  color: var(--accent-terracotta-hover);
+  text-decoration: underline;
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.toast-close-btn:hover {
+  background-color: #f6f2ec;
+  color: var(--text-main);
+}
+
+@media (max-width: 600px) {
+  .klay-toast-banner {
+    top: 76px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+  }
+}
