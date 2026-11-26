@@ -6,7 +6,38 @@ import { requireAuth } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
+// Public route to view bill on mobile after scanning QR
+router.get('/view/:orderId', async (req, res) => {
+  try {
+    const order = await Order.findOne({ orderId: req.params.orderId })
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Bill/Order not found' })
+    }
+    res.json({ success: true, order })
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Public route to pay via eSewa from mobile
+router.post('/view/:orderId/pay', async (req, res) => {
+  try {
+    const order = await Order.findOneAndUpdate(
+      { orderId: req.params.orderId },
+      { paymentStatus: 'completed' },
+      { new: true }
+    )
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' })
+    }
+    res.json({ success: true, message: 'Payment completed successfully!', order })
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
 router.use(requireAuth)
+
 
 router.post('/', async (req, res) => {
   try {
@@ -72,7 +103,7 @@ router.post('/', async (req, res) => {
     }
 
     const newOrder = new Order({
-      orderId: `KLAY-${Date.now().toString().slice(-8)}`,
+      orderId: req.body.customOrderId || `KLAY-${Date.now().toString().slice(-8)}`,
       user: req.user._id,
       customerName,
       customerEmail,

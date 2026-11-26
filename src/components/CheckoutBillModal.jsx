@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { apiRequest } from '../services/api'
@@ -36,10 +36,61 @@ export default function CheckoutBillModal() {
     year: 'numeric'
   })
 
-  // Dynamic QR Code payload for eSewa
+  // Dynamic QR Code payload pointing to the live bill page on mobile
   const esewaPayload = useMemo(() => {
-    return `esewa://pay?order=${orderId}&amt=${totalAmount}&merchant=KLAY`
-  }, [orderId, totalAmount])
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://klay-store-mqru.vercel.app'
+    return `${origin}/bill/${orderId}`
+  }, [orderId])
+
+  // Automatically register order on backend when eSewa QR opens so mobile can view the exact bill
+  useEffect(() => {
+    let active = true
+    async function ensureBillReady() {
+      if (!isCheckoutOpen || paymentMethod !== 'esewa' || !cart.length) return
+      try {
+        await apiRequest('/orders', {
+          method: 'POST',
+          body: JSON.stringify({
+            customOrderId: orderId,
+            customerPhone: customerDetails.phone.trim(),
+            shippingAddress: {
+              city: customerDetails.city.trim(),
+              street: customerDetails.street.trim(),
+              province: customerDetails.province.trim(),
+              postalCode: '44600'
+            },
+            paymentMethod: 'esewa'
+          })
+        })
+      } catch (e) {
+        // Silently handle if already created
+      }
+    }
+
+    if (isCheckoutOpen && paymentMethod === 'esewa') {
+      ensureBillReady()
+    }
+
+    return () => { active = false }
+  }, [isCheckoutOpen, paymentMethod, orderId])
+  useEffect(() => {
+    if (!isCheckoutOpen || paymentMethod !== 'esewa' || confirmedOrder) return
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await apiRequest(`/orders/view/${orderId}`)
+        if (res.success && res.order && res.order.paymentStatus === 'completed') {
+          clearInterval(pollRef.current)
+          setConfirmedOrder(res.order)
+          showToast(`Order #${res.order.orderId} verified and paid via eSewa!`, 'success')
+        }
+      } catch (e) {}
+    }, 2500)
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [isCheckoutOpen, paymentMethod, orderId, confirmedOrder, showToast])
 
   // Generate SVG QR Matrix
   const qrSvgData = useMemo(() => {
