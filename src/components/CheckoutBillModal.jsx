@@ -38,9 +38,8 @@ export default function CheckoutBillModal() {
 
   // Dynamic QR Code payload for eSewa
   const esewaPayload = useMemo(() => {
-    const itemsSummary = cart.map((i) => `${i.quantity}x ${i.name}`).join(', ')
-    return `eSewa Bill Pay | Merchant: KLAY Kitchenware Nepal | Order ID: ${orderId} | Customer: ${customerDetails.name} | Amount: NPR ${totalAmount} | Items: ${itemsSummary}`
-  }, [orderId, customerDetails.name, totalAmount, cart])
+    return `esewa://pay?order=${orderId}&amt=${totalAmount}&merchant=KLAY`
+  }, [orderId, totalAmount])
 
   // Generate SVG QR Matrix
   const qrSvgData = useMemo(() => {
@@ -373,17 +372,6 @@ export default function CheckoutBillModal() {
                     Bill Order: <strong>#{orderId}</strong> • Amount: <strong>Rs. {totalAmount.toLocaleString('en-IN')}</strong>
                   </p>
                 </div>
-
-                {/* Primary Button: Pay with eSewa */}
-                <button
-                  type="button"
-                  className="esewa-pay-btn"
-                  disabled={isSubmitting}
-                  onClick={() => handlePlaceOrder('esewa')}
-                >
-                  <span className="btn-esewa-icon">e</span>
-                  {isSubmitting ? 'Processing Payment...' : `Pay with eSewa (Rs. ${totalAmount.toLocaleString('en-IN')})`}
-                </button>
 
                 {/* Fallback Option below QR: Done & Proceed */}
                 <div className="esewa-fallback-row">
