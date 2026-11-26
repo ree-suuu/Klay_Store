@@ -43,6 +43,8 @@ export default function CheckoutBillModal() {
   }, [orderId])
 
   // Automatically register order on backend when eSewa QR opens so mobile can view the exact bill
+  const pollRef = useRef(null)
+
   useEffect(() => {
     let active = true
     async function ensureBillReady() {
