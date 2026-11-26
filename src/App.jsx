@@ -14,7 +14,6 @@ import Contact from './pages/Contact'
 import Login from './pages/Login'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsConditions from './pages/TermsConditions'
-import MobileBillPay from './pages/MobileBillPay'
 import './App.css'
 
 function App() {
@@ -40,7 +39,6 @@ function App() {
                 <Route path="/shop" element={<Shop />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/bill/:billToken" element={<MobileBillPay />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsConditions />} />
               </Routes>
