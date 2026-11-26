@@ -14,6 +14,7 @@ function createToken(userId) {
 
 function sendAuthResponse(res, user, message, statusCode = 200) {
   const token = createToken(user._id.toString())
+  const userRole = user.role || user.type || 'customer'
   res
     .cookie(JWT_COOKIE_NAME, token, {
       httpOnly: true,
@@ -28,7 +29,9 @@ function sendAuthResponse(res, user, message, statusCode = 200) {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: userRole,
+        type: userRole
       }
     })
 }
@@ -40,17 +43,27 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name, email, and password are required' })
     }
 
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(normalizedEmail)) {
+      return res.status(400).json({ success: false, message: 'Only Gmail addresses (@gmail.com) are allowed' })
+    }
+
     if (password.length < 6) {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' })
     }
 
-    const normalizedEmail = email.trim().toLowerCase()
     const existingUser = await User.findOne({ email: normalizedEmail })
     if (existingUser) {
       return res.status(409).json({ success: false, message: 'An account with this email already exists' })
     }
 
-    const user = await User.create({ name: name.trim(), email: normalizedEmail, password })
+    const user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      password,
+      role: 'customer',
+      type: 'customer'
+    })
     sendAuthResponse(res, user, 'Account created successfully', 201)
   } catch (error) {
     console.error('Registration failed:', error)
@@ -65,12 +78,21 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required' })
     }
 
-    const user = await User.findOne({ email: email.trim().toLowerCase() })
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(normalizedEmail)) {
+      return res.status(400).json({ success: false, message: 'Only Gmail addresses (@gmail.com) are allowed' })
+    }
+
+    const user = await User.findOne({ email: normalizedEmail })
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' })
     }
 
     user.lastLoginAt = new Date()
+    if (!user.role || !user.type) {
+      user.role = user.role || 'customer'
+      user.type = user.type || 'customer'
+    }
     await user.save()
     sendAuthResponse(res, user, 'Welcome back')
   } catch (error) {
@@ -93,7 +115,17 @@ router.get('/me', async (req, res) => {
     const user = await User.findById(payload.userId).select('-password')
     if (!user) return res.status(401).json({ success: false, message: 'Not authenticated' })
 
-    res.json({ success: true, user: { id: user._id, name: user.name, email: user.email } })
+    const userRole = user.role || user.type || 'customer'
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: userRole,
+        type: userRole
+      }
+    })
   } catch {
     res.status(401).json({ success: false, message: 'Not authenticated' })
   }

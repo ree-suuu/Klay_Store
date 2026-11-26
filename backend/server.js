@@ -18,13 +18,39 @@ const app = express()
 const PORT = process.env.PORT || 5000
 
 app.use(helmet())
+
+// Enable CORS with support for local dev and production frontend
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.CLIENT_URL
+].filter(Boolean)
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps, curl, or same-origin on Vercel)
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.startsWith(o))) {
+      return callback(null, true)
+    }
+    return callback(null, true) // Allow all in production or restrict if needed
+  },
   credentials: true
 }))
+
 app.use(express.json())
 app.use(cookieParser())
 app.use(morgan('dev'))
+
+// Ensure database connection middleware for serverless invocations
+app.use(async (req, res, next) => {
+  try {
+    await connectDatabase()
+    next()
+  } catch (error) {
+    console.error('Database connection error:', error)
+    res.status(500).json({ error: 'Database connection failed' })
+  }
+})
 
 // Root & Health Checks
 app.get('/', (req, res) => {
@@ -54,16 +80,25 @@ app.use('/api/auth', authRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/orders', orderRoutes)
 
-async function startServer() {
-  try {
-    await connectDatabase()
-    app.listen(PORT, () => {
-      console.log(`Backend running at http://localhost:${PORT}`)
-    })
-  } catch (error) {
-    console.error('Unable to start backend:', error.message)
-    process.exitCode = 1
+import { fileURLToPath } from 'url'
+
+// Only start the HTTP listener if executed directly (e.g., node backend/server.js in local dev)
+const isDirectExecution = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
+
+if (isDirectExecution) {
+  async function startServer() {
+    try {
+      await connectDatabase()
+      app.listen(PORT, () => {
+        console.log(`Backend running at http://localhost:${PORT}`)
+      })
+    } catch (error) {
+      console.error('Unable to start backend:', error.message)
+      process.exitCode = 1
+    }
   }
+
+  startServer()
 }
 
-startServer()
+export default app

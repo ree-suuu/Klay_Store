@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { CategoryIcon } from '../components/CategoryIcons'
 import { useCart } from '../context/CartContext'
 import { apiRequest } from '../services/api'
+import ShopFilterSidebar from '../components/ShopFilterSidebar'
 import './Pages.css'
 
 export default function Shop() {
@@ -11,14 +12,37 @@ export default function Shop() {
   const activeBrand = searchParams.get('brand') || ''
   const { openQuantityModal } = useCart()
 
-  // Filter states inside a category
-  const [selectedBrand, setSelectedBrand] = useState('All')
-  const [selectedPriceRange, setSelectedPriceRange] = useState('All')
+  // Filter states
+  const [selectedCategories, setSelectedCategories] = useState(() => {
+    const cat = searchParams.get('category')
+    return cat ? [cat] : []
+  })
+  const [selectedBrands, setSelectedBrands] = useState(() => {
+    const b = searchParams.get('brand')
+    return b ? [b] : []
+  })
+  const [priceRange, setPriceRange] = useState([300, 6000])
+  const [stockFilter, setStockFilter] = useState('all') // 'all', 'in-stock', 'out-of-stock'
+  const [selectedMaterials, setSelectedMaterials] = useState([])
   const [sortBy, setSortBy] = useState('featured')
-  const [brandSearch, setBrandSearch] = useState('')
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
   const [apiProducts, setApiProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [productsError, setProductsError] = useState('')
+
+  // Sync state if URL query changes (e.g. navigation from Home or Navbar)
+  useEffect(() => {
+    const cat = searchParams.get('category')
+    const b = searchParams.get('brand')
+    if (cat) {
+      setSelectedCategories([cat])
+    }
+    if (b) {
+      setSelectedBrands([b])
+    }
+  }, [searchParams])
 
   // Selected product for Details Modal
   const [activeProduct, setActiveProduct] = useState(null)
@@ -791,84 +815,146 @@ export default function Shop() {
       ? apiProducts
       : fallbackProducts
 
-  // Find active category info
-  const activeCategory = useMemo(() => {
-    return categories.find((c) => c.id === activeCategorySlug) || null
-  }, [activeCategorySlug, categories])
+  const trustedBrands = [
+    { name: 'Baltra', brand: 'Baltra', logo: '/baltra/baltra.png' },
+    { name: 'Hawkins', brand: 'Hawkins', logo: '/hawkins/hawkins.png' },
+    { name: 'Diamond', brand: 'Diamond', logo: '/diamond/diamond.png' },
+    { name: 'Wega', brand: 'Wega', logo: '/wega/wega.png' },
+    { name: 'Bagmati', brand: 'Bagmati', logo: '/bagmati/bagmati.png' },
+    { name: 'GEM', brand: 'GEM', logo: '/gem/gem.png' },
+    { name: 'Thimi Ceramics', brand: 'Thimi Ceramics', logo: '/ceramics/ceramics.png' },
+    { name: 'Famous Steel', brand: 'Famous Steel', logo: '/famous/famous.png' }
+  ]
 
-  // Filter products by category, brand, and price (Nepali Rupees)
+  const handleToggleCategory = (catId) => {
+    setSelectedCategories((prev) => {
+      const next = prev.includes(catId) ? prev.filter((c) => c !== catId) : [...prev, catId]
+      if (next.length === 1) {
+        setSearchParams({ category: next[0] })
+      } else {
+        setSearchParams({})
+      }
+      return next
+    })
+  }
+
+  const handleToggleBrand = (brandName) => {
+    setSelectedBrands((prev) => {
+      const next = prev.includes(brandName) ? prev.filter((b) => b !== brandName) : [...prev, brandName]
+      if (next.length === 1 && selectedCategories.length === 0) {
+        setSearchParams({ brand: next[0] })
+      } else if (selectedCategories.length === 1) {
+        setSearchParams({ category: selectedCategories[0] })
+      } else {
+        setSearchParams({})
+      }
+      return next
+    })
+  }
+
+  const handleApplyPrice = (min, max) => {
+    setPriceRange([min, max])
+  }
+
+  const handleToggleMaterial = (matId) => {
+    setSelectedMaterials((prev) =>
+      prev.includes(matId) ? prev.filter((m) => m !== matId) : [...prev, matId]
+    )
+  }
+
+  const handleToggleStock = (val) => {
+    setStockFilter(val)
+  }
+
+  const handleClearAllFilters = () => {
+    setSelectedCategories([])
+    setSelectedBrands([])
+    setPriceRange([300, 6000])
+    setStockFilter('all')
+    setSelectedMaterials([])
+    setSortBy('featured')
+    setSearchQuery('')
+    setSearchParams({})
+  }
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    count += selectedCategories.length
+    count += selectedBrands.length
+    if (priceRange[0] > 300 || priceRange[1] < 6000) count++
+    if (stockFilter !== 'all') count++
+    count += selectedMaterials.length
+    if (searchQuery.trim()) count++
+    return count
+  }, [selectedCategories, selectedBrands, priceRange, stockFilter, selectedMaterials, searchQuery])
+
+  // Filter products by category, brand, price, stock, and material
   const filteredProducts = useMemo(() => {
-    if (!activeCategory && !activeBrand) return []
+    let list = [...allProducts]
 
-    let list = activeCategory
-      ? allProducts.filter((p) => p.category === activeCategory.id)
-      : allProducts.filter((p) => p.brand.toLowerCase() === activeBrand.toLowerCase())
+    // 0. Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      list = list.filter((p) => {
+        const hay = `${p.name} ${p.brand} ${p.specs || ''} ${p.description || ''} ${p.category || ''}`.toLowerCase()
+        return hay.includes(q)
+      })
+    }
 
-    if (activeBrand && brandSearch.trim()) {
-      const search = brandSearch.trim().toLowerCase()
+    // 1. Category Filter
+    if (selectedCategories.length > 0) {
+      list = list.filter((p) => selectedCategories.includes(p.category))
+    }
+
+    // 2. Brand Filter
+    if (selectedBrands.length > 0) {
       list = list.filter((p) =>
-        [p.name, p.specs, p.description].some((value) => value?.toLowerCase().includes(search))
+        selectedBrands.some((b) => b.toLowerCase() === p.brand?.toLowerCase())
       )
     }
 
-    // Brand filter
-    if (selectedBrand !== 'All') {
-      list = list.filter((p) => p.brand === selectedBrand)
+    // 3. Price Range Filter in Nepali Rupees
+    list = list.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1])
+
+    // 4. Stock Filter
+    if (stockFilter === 'in-stock') {
+      list = list.filter((p) => (typeof p.stock === 'number' ? p.stock : 10) > 0)
+    } else if (stockFilter === 'out-of-stock') {
+      list = list.filter((p) => (typeof p.stock === 'number' ? p.stock : 10) <= 0)
     }
 
-    // Price Range filter in Nepali Rupees
-    if (selectedPriceRange === 'under-1500') {
-      list = list.filter((p) => p.price < 1500)
-    } else if (selectedPriceRange === '1500-3500') {
-      list = list.filter((p) => p.price >= 1500 && p.price <= 3500)
-    } else if (selectedPriceRange === 'above-3500') {
-      list = list.filter((p) => p.price > 3500)
+    // 5. Material / Utensil Type Filter
+    if (selectedMaterials.length > 0) {
+      const materialMap = {
+        'stainless-steel': ['stainless', 'steel'],
+        'aluminium': ['aluminium', 'aluminum', 'anodised', 'anodized'],
+        'terracotta-clay': ['ceramic', 'clay', 'earthen', 'terracotta'],
+        'induction-base': ['induction'],
+        'insulated-plastic': ['insulated', 'bpa', 'plastic', 'thermal']
+      }
+      list = list.filter((p) => {
+        const text = `${p.name} ${p.specs || ''} ${p.description || ''} ${p.material || ''}`.toLowerCase()
+        return selectedMaterials.some((matId) => {
+          const keywords = materialMap[matId] || []
+          return keywords.some((kw) => text.includes(kw))
+        })
+      })
     }
 
-    // Sort order
+    // 6. Sort
     if (sortBy === 'price-low') {
-      list = [...list].sort((a, b) => a.price - b.price)
+      list.sort((a, b) => a.price - b.price)
     } else if (sortBy === 'price-high') {
-      list = [...list].sort((a, b) => b.price - a.price)
+      list.sort((a, b) => b.price - a.price)
     } else if (sortBy === 'name-asc') {
-      list = [...list].sort((a, b) => a.name.localeCompare(b.name))
+      list.sort((a, b) => a.name.localeCompare(b.name))
     }
 
     return list
-  }, [activeCategory, activeBrand, brandSearch, allProducts, selectedBrand, selectedPriceRange, sortBy])
-
-  // Available brands within the active category for the filter pill bar
-  const availableBrands = useMemo(() => {
-    if (!activeCategory) return []
-    const brandsSet = new Set(
-      allProducts.filter((p) => p.category === activeCategory.id).map((p) => p.brand)
-    )
-    return ['All', ...Array.from(brandsSet)]
-  }, [activeCategory, allProducts])
-
-  // Helper to change category via query parameter
-  const handleSelectCategory = (categoryId) => {
-    setSearchParams({ category: categoryId })
-    setBrandSearch('')
-    setSelectedBrand('All')
-    setSelectedPriceRange('All')
-    setSortBy('featured')
-    setActiveProduct(null)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const handleClearCategory = () => {
-    setSearchParams({})
-    setBrandSearch('')
-    setSelectedBrand('All')
-    setSelectedPriceRange('All')
-    setSortBy('featured')
-    setActiveProduct(null)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  }, [allProducts, selectedCategories, selectedBrands, priceRange, stockFilter, selectedMaterials, sortBy, searchQuery])
 
   return (
-    <div className="page-container shop-page">
+    <div className="page-container shop-page-wrapper">
       {productsLoading && (
         <div className="shop-data-status" role="status">
           Loading products...
@@ -879,151 +965,89 @@ export default function Shop() {
           Unable to load products: {productsError}
         </div>
       )}
-      {/* =========================================================================
-          VIEW 1: CATEGORY GRID (When no specific category is selected)
-         ========================================================================= */}
-      {!activeCategory && !activeBrand ? (
-        <section className="categories-view-section">
-          <div className="page-header">
-            <h1>Explore by Category</h1>
-            <p>
-              Select an appliance category below to discover models across multiple price ranges, sizes, and trusted brands.
-            </p>
-          </div>
 
-          <div className="appliance-category-grid">
-            {categories.map((cat) => {
-              const productCount = allProducts.filter((p) => p.category === cat.id).length
-              return (
-                <div
-                  key={cat.id}
-                  className="appliance-cat-card"
-                  onClick={() => handleSelectCategory(cat.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSelectCategory(cat.id)
-                  }}
+      {/* Mobile Filter Toggle Drawer Button */}
+      <div className="mobile-filter-bar">
+        <button
+          type="button"
+          className="mobile-filter-open-btn"
+          onClick={() => setMobileFilterOpen(true)}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+          Filter & Refine {activeFilterCount > 0 && `(${activeFilterCount})`}
+        </button>
+      </div>
+
+      <div className="shop-layout-container">
+        {/* Left Column: Filter Sidebar */}
+        <aside className="shop-sidebar-column">
+          <ShopFilterSidebar
+            allProducts={allProducts}
+            categories={categories}
+            brandsList={trustedBrands}
+            selectedCategories={selectedCategories}
+            onToggleCategory={handleToggleCategory}
+            selectedBrands={selectedBrands}
+            onToggleBrand={handleToggleBrand}
+            priceRange={priceRange}
+            onApplyPrice={handleApplyPrice}
+            stockFilter={stockFilter}
+            onToggleStock={handleToggleStock}
+            selectedMaterials={selectedMaterials}
+            onToggleMaterial={handleToggleMaterial}
+            onResetFilters={handleClearAllFilters}
+            isOpenMobile={mobileFilterOpen}
+            onCloseMobile={() => setMobileFilterOpen(false)}
+          />
+        </aside>
+
+        {/* Right Column: Catalog Main */}
+        <main className="shop-main-column">
+          {/* Top Toolbar */}
+          <div className="shop-toolbar">
+            {/* Search Bar */}
+            <div className="shop-search-wrapper">
+              <span className="shop-search-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </span>
+              <input
+                type="search"
+                className="shop-search-input"
+                placeholder="Search products, brands, categories…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search products"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="shop-search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
                 >
-                  <div className="appliance-icon-wrapper">
-                    <CategoryIcon name={cat.id} color="var(--accent-terracotta)" size={64} />
-                  </div>
-                  <h3 className="appliance-cat-title">{cat.name}</h3>
-                  <span className="appliance-cat-count">
-                    {productsLoading ? 'Loading products...' : `${productCount} ${productCount === 1 ? 'Product' : 'Products'} Available`}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      ) : (
-        /* =========================================================================
-            VIEW 2: FILTERED PRODUCTS VIEW (When category is selected)
-           ========================================================================= */
-        <section className="category-products-section">
-          {/* Top Breadcrumb & Back Bar */}
-          <div className="shop-breadcrumb-bar">
-            <button className="back-categories-btn" onClick={handleClearCategory}>
-              ← Back to All {activeBrand ? 'Products' : 'Categories'}
-            </button>
-            <div className="breadcrumb-trail">
-              <Link to="/">Home</Link>
-              <span>/</span>
-              <button className="breadcrumb-link-btn" onClick={handleClearCategory}>
-                Shop
-              </button>
-              <span>/</span>
-              <span className="breadcrumb-current">{activeBrand || activeCategory.shortName}</span>
-            </div>
-          </div>
-
-          {/* Category Banner */}
-          <div className="category-header-banner">
-            <div className="category-banner-icon">
-              {activeCategory ? (
-                <CategoryIcon name={activeCategory.id} color="var(--accent-terracotta)" size={52} />
-              ) : (
-                <span className="brand-banner-mark">{activeBrand.slice(0, 2).toUpperCase()}</span>
+                  ✕
+                </button>
               )}
             </div>
-            <div className="category-banner-info">
-              <h2>{activeBrand || activeCategory.shortName}</h2>
-              <p>
-                {activeBrand
-                  ? `Explore all ${activeBrand} products available at KLAY.`
-                  : activeCategory.description}
-              </p>
-            </div>
-          </div>
 
-          {activeBrand && (
-            <div className="brand-search-panel">
-              <label htmlFor="brand-product-search">Search {activeBrand} products</label>
-              <input
-                id="brand-product-search"
-                type="search"
-                value={brandSearch}
-                onChange={(event) => setBrandSearch(event.target.value)}
-                placeholder={`Search ${activeBrand} products...`}
-              />
-            </div>
-          )}
-
-          {/* Filter & Sorting Controls */}
-          <div className="shop-controls-panel">
-            {/* Brand Filter */}
-            {!activeBrand && <div className="control-group">
-              <span className="control-label">Brand:</span>
-              <div className="pill-filters">
-                {availableBrands.map((b) => (
-                  <button
-                    key={b}
-                    className={`filter-pill ${selectedBrand === b ? 'active' : ''}`}
-                    onClick={() => setSelectedBrand(b)}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-            </div>}
-
-            {/* Price Filter (in Nepali Rupees) */}
-            <div className="control-group">
-              <span className="control-label">Price Range:</span>
-              <div className="pill-filters">
-                <button
-                  className={`filter-pill ${selectedPriceRange === 'All' ? 'active' : ''}`}
-                  onClick={() => setSelectedPriceRange('All')}
-                >
-                  All Prices
-                </button>
-                <button
-                  className={`filter-pill ${selectedPriceRange === 'under-1500' ? 'active' : ''}`}
-                  onClick={() => setSelectedPriceRange('under-1500')}
-                >
-                  Under Rs. 1,500
-                </button>
-                <button
-                  className={`filter-pill ${selectedPriceRange === '1500-3500' ? 'active' : ''}`}
-                  onClick={() => setSelectedPriceRange('1500-3500')}
-                >
-                  Rs. 1,500 - Rs. 3,500
-                </button>
-                <button
-                  className={`filter-pill ${selectedPriceRange === 'above-3500' ? 'active' : ''}`}
-                  onClick={() => setSelectedPriceRange('above-3500')}
-                >
-                  Above Rs. 3,500
-                </button>
-              </div>
-            </div>
-
-            {/* Sorting Dropdown */}
-            <div className="control-group sort-group">
-              <span className="control-label">Sort:</span>
+            <div className="shop-toolbar-actions">
+              <label htmlFor="shop-sort-select" className="sort-label">Sort By:</label>
               <select
-                className="sort-select"
+                id="shop-sort-select"
+                className="sort-select-input"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
@@ -1035,24 +1059,100 @@ export default function Shop() {
             </div>
           </div>
 
-          {/* Product Cards Grid */}
-          <div className="category-products-count">
-            Showing <strong>{filteredProducts.length}</strong> products for{' '}
-            <em>{activeBrand || activeCategory.shortName}</em>
+          {/* Results count line under toolbar */}
+          <div className="shop-results-meta">
+            {searchQuery.trim() ? (
+              <span>
+                <strong>{filteredProducts.length}</strong> result{filteredProducts.length !== 1 ? 's' : ''} for <em>"{searchQuery}"</em>
+              </span>
+            ) : (
+              <span>Showing <strong>{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'product' : 'products'}</span>
+            )}
           </div>
 
+          {/* Active Filter Chips Bar */}
+          {activeFilterCount > 0 && (
+            <div className="active-filters-chips-bar">
+              <span className="active-filters-label">Active Filters:</span>
+              <div className="active-chips-list">
+                {selectedCategories.map((catId) => {
+                  const cat = categories.find((c) => c.id === catId)
+                  return (
+                    <button
+                      key={catId}
+                      className="filter-chip"
+                      onClick={() => handleToggleCategory(catId)}
+                      title="Remove category filter"
+                    >
+                      {cat?.shortName || catId} ✕
+                    </button>
+                  )
+                })}
+                {selectedBrands.map((bName) => (
+                  <button
+                    key={bName}
+                    className="filter-chip"
+                    onClick={() => handleToggleBrand(bName)}
+                    title="Remove brand filter"
+                  >
+                    {bName} ✕
+                  </button>
+                ))}
+                {(priceRange[0] > 300 || priceRange[1] < 6000) && (
+                  <button
+                    className="filter-chip"
+                    onClick={() => handleApplyPrice(300, 6000)}
+                    title="Reset price range"
+                  >
+                    Rs. {priceRange[0]} - Rs. {priceRange[1]} ✕
+                  </button>
+                )}
+                {stockFilter === 'in-stock' && (
+                  <button
+                    className="filter-chip"
+                    onClick={() => handleToggleStock('all')}
+                  >
+                    In Stock ✕
+                  </button>
+                )}
+                {stockFilter === 'out-of-stock' && (
+                  <button
+                    className="filter-chip"
+                    onClick={() => handleToggleStock('all')}
+                  >
+                    Out of Stock ✕
+                  </button>
+                )}
+                {selectedMaterials.map((matId) => (
+                  <button
+                    key={matId}
+                    className="filter-chip"
+                    onClick={() => handleToggleMaterial(matId)}
+                  >
+                    {matId === 'stainless' ? 'Stainless Steel' : matId.charAt(0).toUpperCase() + matId.slice(1)} ✕
+                  </button>
+                ))}
+                <button
+                  className="clear-all-chip"
+                  onClick={handleClearAllFilters}
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Catalog Grid or Empty State */}
           {filteredProducts.length === 0 ? (
             <div className="empty-products-state">
-              <h3>No products found for the selected filters.</h3>
-              <p>Try resetting the brand or price filters above.</p>
+              <div className="empty-icon-box">🔍</div>
+              <h3>No matching products found</h3>
+              <p>Try clearing some filters or adjusting your price slider to discover items.</p>
               <button
                 className="btn btn-secondary"
-                onClick={() => {
-                  setSelectedBrand('All')
-                  setSelectedPriceRange('All')
-                }}
+                onClick={handleClearAllFilters}
               >
-                Reset Filters
+                Reset All Filters
               </button>
             </div>
           ) : (
@@ -1071,17 +1171,16 @@ export default function Shop() {
                   <div className="shop-icon-wrapper">
                     {item.badge && <span className="product-tag">{item.badge}</span>}
                     {item.image ? (
-                      <img className="shop-image" src={item.image} alt={item.name} />
+                      <img className="shop-image" src={item.image} alt={item.name} loading="lazy" />
                     ) : (
                       <CategoryIcon name={item.category} color="var(--accent-terracotta)" size={64} />
                     )}
-
                   </div>
                   <div className="shop-content">
                     <div className="product-meta">
                       <span className="brand-badge-pill">{item.brand}</span>
                       <span className="product-cat-tag">
-                        {categories.find((category) => category.id === item.category)?.shortName || item.category}
+                        {categories.find((c) => c.id === item.category)?.shortName || item.category}
                       </span>
                     </div>
                     <h3>{item.name}</h3>
@@ -1117,27 +1216,8 @@ export default function Shop() {
               ))}
             </div>
           )}
-
-          {/* Other Categories Switcher Bar */}
-          {!activeBrand && <div className="browse-other-categories">
-            <h4>Browse Other Categories</h4>
-            <div className="category-quick-pills">
-              {categories
-                .filter((c) => c.id !== activeCategory.id)
-                .map((cat) => (
-                  <button
-                    key={cat.id}
-                    className="quick-cat-pill"
-                    onClick={() => handleSelectCategory(cat.id)}
-                  >
-                    {cat.shortName}
-                  </button>
-                ))}
-            </div>
-          </div>
-          }
-        </section>
-      )}
+        </main>
+      </div>
 
       {/* =========================================================================
           PRODUCT DETAIL MODAL (Opens when clicking any product card)

@@ -32,6 +32,16 @@ export default function Login() {
 
     const isRegister = mode === 'register'
 
+    // Validate Gmail domain format
+    const normalizedEmail = formData.email.trim().toLowerCase()
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(normalizedEmail)) {
+      setStatus({
+        type: 'error',
+        message: 'Please provide a valid Gmail address (@gmail.com)'
+      })
+      return
+    }
+
     // Validate retype password in signup mode
     if (isRegister) {
       if (formData.password !== formData.confirmPassword) {
@@ -47,8 +57,8 @@ export default function Login() {
 
     const endpoint = isRegister ? '/auth/register' : '/auth/login'
     const payload = isRegister 
-      ? { name: formData.name, email: formData.email, password: formData.password }
-      : { email: formData.email, password: formData.password }
+      ? { name: formData.name, email: normalizedEmail, password: formData.password }
+      : { email: normalizedEmail, password: formData.password }
 
     try {
       const data = await apiRequest(endpoint, {
@@ -213,7 +223,7 @@ export default function Login() {
                     id="auth-email"
                     name="email"
                     className="crextio-pill-input"
-                    placeholder="e.g. rishu@example.com"
+                    placeholder="e.g. yourname@gmail.com"
                     value={formData.email}
                     onChange={handleChange}
                     required
