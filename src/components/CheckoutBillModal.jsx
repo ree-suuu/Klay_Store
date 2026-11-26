@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { apiRequest } from '../services/api'
@@ -25,10 +25,11 @@ export default function CheckoutBillModal() {
   const [confirmedOrder, setConfirmedOrder] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Generate dynamic unique order ID
-  const orderId = useMemo(() => {
-    return 'KLAY-' + Math.floor(100000 + Math.random() * 900000)
-  }, [isCheckoutOpen])
+  // Dynamic Bill session state for eSewa QR
+  const [billToken, setBillToken] = useState(null)
+  const [billOrderId, setBillOrderId] = useState(null)
+  const [isCreatingBill, setIsCreatingBill] = useState(false)
+  const pollIntervalRef = useRef(null)
 
   const currentDate = new Date().toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -36,22 +37,104 @@ export default function CheckoutBillModal() {
     year: 'numeric'
   })
 
-  // Dynamic QR Code payload for eSewa
-  const esewaPayload = useMemo(() => {
-    const itemsSummary = cart.map((i) => `${i.quantity}x ${i.name}`).join(', ')
-    return `eSewa Bill Pay | Merchant: KLAY Kitchenware Nepal | Order ID: ${orderId} | Customer: ${customerDetails.name} | Amount: NPR ${totalAmount} | Items: ${itemsSummary}`
-  }, [orderId, customerDetails.name, totalAmount, cart])
+  // Whenever modal opens with esewa, create a dynamic bill session so user can scan it on their phone
+  useEffect(() => {
+    let isMounted = true
 
-  // Generate SVG QR Matrix
+    async function initBillSession() {
+      if (!isCheckoutOpen || paymentMethod !== 'esewa' || !cart.length) {
+        return
+      }
+
+      setIsCreatingBill(true)
+      try {
+        const items = cart.map((i) => ({
+          productId: i.productId || i._id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          image: i.image,
+          brand: i.brand,
+          category: i.category
+        }))
+
+        const res = await apiRequest('/bills/create', {
+          method: 'POST',
+          body: JSON.stringify({
+            customerDetails,
+            items,
+            totalAmount
+          })
+        })
+
+        if (isMounted && res.success) {
+          setBillToken(res.billToken)
+          setBillOrderId(res.orderId)
+        }
+      } catch (err) {
+        console.error('Failed to create bill session for QR:', err)
+      } finally {
+        if (isMounted) setIsCreatingBill(false)
+      }
+    }
+
+    if (isCheckoutOpen && paymentMethod === 'esewa') {
+      initBillSession()
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [isCheckoutOpen, paymentMethod, totalAmount])
+
+  // Poll bill status when billToken is active
+  useEffect(() => {
+    if (!billToken || confirmedOrder) return
+
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await apiRequest(`/bills/${billToken}`)
+        if (res.success && res.bill && res.bill.status === 'paid') {
+          clearInterval(pollIntervalRef.current)
+          setConfirmedOrder({
+            orderId: res.bill.orderId,
+            customerName: res.bill.customerDetails.name,
+            customerEmail: res.bill.customerDetails.email,
+            customerPhone: res.bill.customerDetails.phone,
+            totalAmount: res.bill.totalAmount,
+            shippingAddress: res.bill.customerDetails,
+            items: res.bill.items
+          })
+          showToast(`Payment received! Order #${res.bill.orderId} placed.`, 'success')
+        }
+      } catch (err) {
+        // Silently ignore poll errors
+      }
+    }, 2500)
+
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    }
+  }, [billToken, confirmedOrder, showToast])
+
+  // Dynamic QR code URL pointing directly to the mobile bill payment page
+  const qrTargetUrl = useMemo(() => {
+    if (!billToken) return ''
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://klay-store-mqru.vercel.app'
+    return `${origin}/bill/${billToken}`
+  }, [billToken])
+
+  // Generate SVG QR Matrix for the URL
   const qrSvgData = useMemo(() => {
+    if (!qrTargetUrl) return null
     try {
-      const matrix = generateQRMatrix(esewaPayload)
+      const matrix = generateQRMatrix(qrTargetUrl)
       return renderQRAsSVGPath(matrix)
     } catch (e) {
       console.warn('QR generation fallback:', e)
       return null
     }
-  }, [esewaPayload])
+  }, [qrTargetUrl])
 
   if (!isCheckoutOpen) return null
 
@@ -59,7 +142,7 @@ export default function CheckoutBillModal() {
     setCustomerDetails((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  // Handle Order Placement & Database Saving
+  // Handle Order Placement & Database Saving for COD or Khalti
   const handlePlaceOrder = async (confirmedPaymentMethod = paymentMethod) => {
     setErrorMessage('')
     setIsSubmitting(true)
@@ -96,6 +179,7 @@ export default function CheckoutBillModal() {
 
   const handleFinish = () => {
     setConfirmedOrder(null)
+    setBillToken(null)
     clearCart()
     closeCheckout()
   }
@@ -123,75 +207,85 @@ export default function CheckoutBillModal() {
         </button>
 
         {confirmedOrder ? (
-          /* ================= ORDER SUCCESS CONFIRMATION ================= */
-          <div className="order-confirmed-view">
-            <div className="order-success-icon">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          /* ================= ORDER SUCCESS VIEW ================= */
+          <div className="bill-success-view">
+            <div className="bill-success-badge">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </div>
-            <span className="order-kicker">SAVED TO DATABASE &amp; CONFIRMED</span>
-            <h2>Thank You, {confirmedOrder.customerName}!</h2>
-            <p className="order-subtext">
-              Your order <strong>#{confirmedOrder.orderId}</strong> is verified. We are packaging your genuine cookware for doorstep delivery across Nepal.
+            <h2 className="bill-success-title">Order Placed Successfully!</h2>
+            <p className="bill-success-subtitle">
+              Your official order has been registered in the database.
             </p>
 
-            <div className="order-meta-box">
-              <div className="meta-row">
-                <span>Total Bill Paid:</span>
-                <strong className="text-terracotta">Rs. {confirmedOrder.totalAmount.toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="meta-row">
-                <span>Payment Method:</span>
-                <strong>
-                  {confirmedOrder.paymentMethod === 'esewa'
-                    ? 'eSewa Digital Pay (Verified)'
-                    : confirmedOrder.paymentMethod === 'cod'
-                    ? 'Cash on Delivery (COD)'
-                    : 'Khalti'}
+            <div className="bill-success-order-box">
+              <div className="bill-receipt-row">
+                <span className="receipt-label">Order Number:</span>
+                <strong className="receipt-value order-id-highlight">
+                  #{confirmedOrder.orderId}
                 </strong>
               </div>
-              <div className="meta-row">
-                <span>Delivery Address:</span>
-                <span>{confirmedOrder.shippingAddress?.street}, {confirmedOrder.shippingAddress?.city}</span>
+              <div className="bill-receipt-row">
+                <span className="receipt-label">Customer Name:</span>
+                <strong className="receipt-value">{confirmedOrder.customerName}</strong>
               </div>
-              <div className="meta-row">
-                <span>Contact Phone:</span>
-                <span>{confirmedOrder.customerPhone}</span>
+              <div className="bill-receipt-row">
+                <span className="receipt-label">Customer Phone:</span>
+                <span className="receipt-value">{confirmedOrder.customerPhone}</span>
+              </div>
+              <div className="bill-receipt-row">
+                <span className="receipt-label">Delivery Address:</span>
+                <span className="receipt-value">
+                  {confirmedOrder.shippingAddress?.street}, {confirmedOrder.shippingAddress?.city}
+                </span>
+              </div>
+              <div className="bill-receipt-row total-paid-row">
+                <span className="receipt-label">Total Amount:</span>
+                <strong className="receipt-value paid-val">
+                  Rs. {confirmedOrder.totalAmount?.toLocaleString('en-IN')}
+                </strong>
               </div>
             </div>
 
-            <button type="button" className="bill-primary-btn" onClick={handleFinish}>
-              Back to Store
+            <button type="button" className="bill-finish-btn" onClick={handleFinish}>
+              Return to Store
             </button>
           </div>
         ) : (
-          /* ================= BILL & PAYMENT CHECKOUT FLOW ================= */
+          /* ================= STANDARD BILL & PAYMENT VIEW ================= */
           <div className="bill-content-scroll">
-            {/* Header */}
+            {/* Header: Logo, Invoice ID, Date */}
             <div className="bill-header">
               <div className="bill-brand">
-                <img src="/KLAY_hero.png" alt="KLAY" className="bill-logo-img" />
-                <span className="bill-tagline">Authentic Nepali Utensils &amp; Appliances</span>
+                <img
+                  src="/logo.png"
+                  alt="KLAY Kitchenware"
+                  className="bill-logo-img"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                  }}
+                />
+                <span className="bill-tagline">Kitchen Utensils &amp; Premium Appliances</span>
               </div>
               <div className="bill-meta-header">
-                <span className="invoice-badge">OFFICIAL BILL</span>
-                <span className="bill-invoice-num">#{orderId}</span>
-                <span className="bill-date">{currentDate}</span>
+                <span className="bill-badge">OFFICIAL INVOICE</span>
+                <span className="bill-invoice-id">
+                  #{billOrderId || 'KLAY-BILL'}
+                </span>
+                <span className="bill-invoice-date">{currentDate}</span>
               </div>
             </div>
 
-            <div className="bill-divider"></div>
-
-            {/* Customer & Delivery Form Inputs */}
-            <div className="checkout-customer-section">
-              <h4 className="section-title">Delivery &amp; Customer Details</h4>
-              <div className="customer-form-grid">
-                <div className="form-field">
-                  <label htmlFor="checkout-name">Full Name</label>
+            {/* Customer Details Form */}
+            <div className="bill-customer-section">
+              <h3 className="bill-section-title">Delivery &amp; Customer Information</h3>
+              <div className="bill-form-grid">
+                <div className="bill-field">
+                  <label htmlFor="customerName">Full Name</label>
                   <input
+                    id="customerName"
                     type="text"
-                    id="checkout-name"
                     name="name"
                     value={customerDetails.name}
                     onChange={handleInputChange}
@@ -199,11 +293,11 @@ export default function CheckoutBillModal() {
                     required
                   />
                 </div>
-                <div className="form-field">
-                  <label htmlFor="checkout-phone">Mobile / Phone</label>
+                <div className="bill-field">
+                  <label htmlFor="customerPhone">Phone Number</label>
                   <input
+                    id="customerPhone"
                     type="tel"
-                    id="checkout-phone"
                     name="phone"
                     value={customerDetails.phone}
                     onChange={handleInputChange}
@@ -211,88 +305,104 @@ export default function CheckoutBillModal() {
                     required
                   />
                 </div>
-                <div className="form-field">
-                  <label htmlFor="checkout-email">Email Address</label>
+                <div className="bill-field">
+                  <label htmlFor="customerEmail">Email Address</label>
                   <input
+                    id="customerEmail"
                     type="email"
-                    id="checkout-email"
                     name="email"
                     value={customerDetails.email}
                     onChange={handleInputChange}
-                    placeholder="e.g. rishu@example.com"
+                    placeholder="e.g. customer@gmail.com"
                     required
                   />
                 </div>
-                <div className="form-field">
-                  <label htmlFor="checkout-city">Delivery City / Area</label>
+                <div className="bill-field">
+                  <label htmlFor="customerCity">City / Valley</label>
                   <input
+                    id="customerCity"
                     type="text"
-                    id="checkout-city"
                     name="city"
                     value={customerDetails.city}
                     onChange={handleInputChange}
-                    placeholder="e.g. Kathmandu Valley, Lalitpur, Pokhara"
+                    placeholder="e.g. Kathmandu Valley"
+                    required
+                  />
+                </div>
+                <div className="bill-field full-width">
+                  <label htmlFor="customerStreet">Delivery Street &amp; Landmark</label>
+                  <input
+                    id="customerStreet"
+                    type="text"
+                    name="street"
+                    value={customerDetails.street}
+                    onChange={handleInputChange}
+                    placeholder="e.g. New Baneshwor, Ward 10"
                     required
                   />
                 </div>
               </div>
             </div>
 
-            {/* Itemized Table of Purchased Products */}
-            <div className="bill-table-wrapper">
-              <table className="bill-table">
-                <thead>
-                  <tr>
-                    <th className="th-item">Purchased Product</th>
-                    <th className="th-price">Rate</th>
-                    <th className="th-qty">Qty</th>
-                    <th className="th-total">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cart.map((item) => (
-                    <tr key={item.id}>
-                      <td className="td-item">
-                        <div className="bill-item-cell">
-                          <img src={item.image} alt={item.name} className="bill-item-thumb" />
-                          <div className="bill-item-meta">
-                            <span className="bill-item-brand">{item.brand}</span>
-                            <span className="bill-item-name">{item.name}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="td-price">Rs. {Number(item.price).toLocaleString('en-IN')}</td>
-                      <td className="td-qty">{item.quantity}</td>
-                      <td className="td-total">
-                        Rs. {(Number(item.price) * item.quantity).toLocaleString('en-IN')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Purchased Items Table */}
+            <div className="bill-items-section">
+              <div className="bill-items-header">
+                <span className="col-desc">Purchased Product</span>
+                <span className="col-rate">Rate</span>
+                <span className="col-qty">Qty</span>
+                <span className="col-total">Total</span>
+              </div>
+              <div className="bill-items-list">
+                {cart.map((item) => (
+                  <div key={item._id || item.productId} className="bill-item-row">
+                    <div className="bill-item-meta">
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="bill-item-thumbnail"
+                          loading="lazy"
+                        />
+                      )}
+                      <div>
+                        <span className="bill-item-brand">{item.brand}</span>
+                        <h4 className="bill-item-title">{item.name}</h4>
+                      </div>
+                    </div>
+                    <span className="bill-item-rate">
+                      Rs. {item.price.toLocaleString('en-IN')}
+                    </span>
+                    <span className="bill-item-qty">{item.quantity}</span>
+                    <span className="bill-item-subtotal">
+                      Rs. {(item.price * item.quantity).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Calculations Breakdown */}
-            <div className="bill-calculation-box">
-              <div className="calc-row">
+            {/* Calculations & Subtotal */}
+            <div className="bill-summary-box">
+              <div className="summary-calc-row">
                 <span>Items Subtotal ({totalCount} items):</span>
                 <span>Rs. {totalAmount.toLocaleString('en-IN')}</span>
               </div>
-              <div className="calc-row">
+              <div className="summary-calc-row">
                 <span>Fragile Packaging &amp; Delivery:</span>
                 <span className="free-tag">FREE Across Nepal</span>
               </div>
-              <div className="calc-divider"></div>
-              <div className="calc-row grand-total-row">
-                <span>Total Bill Payable:</span>
-                <span className="grand-total-amount">Rs. {totalAmount.toLocaleString('en-IN')}</span>
+              <div className="summary-calc-row grand-total-row">
+                <span className="grand-total-label">Total Bill Payable:</span>
+                <span className="grand-total-amount">
+                  Rs. {totalAmount.toLocaleString('en-IN')}
+                </span>
               </div>
             </div>
 
-            {/* Payment Options Toggle */}
-            <div className="bill-payment-section">
-              <span className="payment-label">Choose Payment Option:</span>
-              <div className="payment-pill-options">
+            {/* Payment Method Selector */}
+            <div className="bill-payment-selector">
+              <label className="bill-selector-label">Choose Payment Option:</label>
+              <div className="payment-options-grid">
                 <label className={`payment-pill ${paymentMethod === 'esewa' ? 'active esewa' : ''}`}>
                   <input
                     type="radio"
@@ -302,7 +412,7 @@ export default function CheckoutBillModal() {
                     onChange={() => setPaymentMethod('esewa')}
                   />
                   <span className="pill-dot esewa-dot"></span>
-                  <span>eSewa (Dynamic QR &amp; Direct Pay)</span>
+                  <span>eSewa (Dynamic Bill QR)</span>
                 </label>
 
                 <label className={`payment-pill ${paymentMethod === 'cod' ? 'active' : ''}`}>
@@ -332,25 +442,29 @@ export default function CheckoutBillModal() {
             {/* Error banner if any */}
             {errorMessage && <div className="bill-error-banner">{errorMessage}</div>}
 
-            {/* ================= ESEWA DYNAMIC QR SECTION ================= */}
+            {/* ================= ESEWA DYNAMIC BILL QR SECTION ================= */}
             {paymentMethod === 'esewa' ? (
               <div className="esewa-qr-container">
                 <div className="esewa-qr-header">
                   <div className="esewa-logo-badge">
                     <span className="esewa-icon">e</span>
-                    <span className="esewa-text">eSewa</span>
+                    <span className="esewa-text">eSewa Bill Pay</span>
                   </div>
                   <div className="esewa-bill-details">
-                    <span className="esewa-scan-instruction">Scan with eSewa Mobile App</span>
+                    <span className="esewa-scan-instruction">Scan with phone camera or scanner</span>
                     <strong className="esewa-payable-val">
                       NPR {totalAmount.toLocaleString('en-IN')}
                     </strong>
                   </div>
                 </div>
 
-                {/* The Dynamic QR Box */}
+                {/* The Dynamic Bill QR Box */}
                 <div className="esewa-qr-box">
-                  {qrSvgData ? (
+                  {isCreatingBill ? (
+                    <div className="qr-fallback-box" style={{ minHeight: '190px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '0.9rem', color: '#666' }}>Generating Bill QR...</span>
+                    </div>
+                  ) : qrSvgData ? (
                     <div className="qr-svg-wrapper">
                       <svg
                         viewBox={`0 0 ${qrSvgData.size} ${qrSvgData.size}`}
@@ -369,35 +483,32 @@ export default function CheckoutBillModal() {
                       <span>QR Code Ready</span>
                     </div>
                   )}
-                  <p className="qr-caption">
-                    Bill Order: <strong>#{orderId}</strong> • Amount: <strong>Rs. {totalAmount.toLocaleString('en-IN')}</strong>
+
+                  <p className="qr-caption" style={{ marginTop: '0.85rem' }}>
+                    Bill Order: <strong>#{billOrderId || 'KLAY'}</strong> • Amount: <strong>Rs. {totalAmount.toLocaleString('en-IN')}</strong>
                   </p>
+
+                  <div style={{
+                    marginTop: '0.75rem',
+                    background: '#f1f8ee',
+                    border: '1px solid #c8e6c9',
+                    borderRadius: '10px',
+                    padding: '0.6rem 0.9rem',
+                    fontSize: '0.82rem',
+                    color: '#2e7d32',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '1.1rem' }}>📱</span>
+                    <span>
+                      Scan this QR code with your mobile phone to view your official bill and pay with eSewa.
+                    </span>
+                  </div>
                 </div>
 
-                {/* Primary Button: Pay with eSewa */}
-                <button
-                  type="button"
-                  className="esewa-pay-btn"
-                  disabled={isSubmitting}
-                  onClick={() => handlePlaceOrder('esewa')}
-                >
-                  <span className="btn-esewa-icon">e</span>
-                  {isSubmitting ? 'Processing Payment...' : `Pay with eSewa (Rs. ${totalAmount.toLocaleString('en-IN')})`}
-                </button>
-
-                {/* Fallback Option below QR: Done & Proceed */}
-                <div className="esewa-fallback-row">
-                  <button
-                    type="button"
-                    className="esewa-done-proceed-btn"
-                    disabled={isSubmitting}
-                    onClick={() => handlePlaceOrder('esewa')}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Done &amp; Proceed (Confirm Checkout)
-                  </button>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  Awaiting payment from your phone... This screen will automatically confirm when payment is complete.
                 </div>
               </div>
             ) : (

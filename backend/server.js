@@ -11,6 +11,7 @@ import brandRoutes from './routes/brandRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import cartRoutes from './routes/cartRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
+import billRoutes from './routes/billRoutes.js'
 
 dotenv.config()
 
@@ -79,6 +80,7 @@ app.use('/api/brands', brandRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api/bills', billRoutes)
 
 import { fileURLToPath } from 'url'
 
