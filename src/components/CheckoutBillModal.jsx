@@ -42,39 +42,7 @@ export default function CheckoutBillModal() {
     return `${origin}/bill/${orderId}`
   }, [orderId])
 
-  // Automatically register order on backend when eSewa QR opens so mobile can view the exact bill
   const pollRef = useRef(null)
-
-  useEffect(() => {
-    let active = true
-    async function ensureBillReady() {
-      if (!isCheckoutOpen || paymentMethod !== 'esewa' || !cart.length) return
-      try {
-        await apiRequest('/orders', {
-          method: 'POST',
-          body: JSON.stringify({
-            customOrderId: orderId,
-            customerPhone: customerDetails.phone.trim(),
-            shippingAddress: {
-              city: customerDetails.city.trim(),
-              street: customerDetails.street.trim(),
-              province: customerDetails.province.trim(),
-              postalCode: '44600'
-            },
-            paymentMethod: 'esewa'
-          })
-        })
-      } catch (e) {
-        // Silently handle if already created
-      }
-    }
-
-    if (isCheckoutOpen && paymentMethod === 'esewa') {
-      ensureBillReady()
-    }
-
-    return () => { active = false }
-  }, [isCheckoutOpen, paymentMethod, orderId])
   useEffect(() => {
     if (!isCheckoutOpen || paymentMethod !== 'esewa' || confirmedOrder) return
 
@@ -117,6 +85,7 @@ export default function CheckoutBillModal() {
     setIsSubmitting(true)
 
     const payload = {
+      customOrderId: orderId,
       customerPhone: customerDetails.phone.trim(),
       shippingAddress: {
         city: customerDetails.city.trim(),
